@@ -1,0 +1,2 @@
+export(MOSS.GWAS)
+useDynLib(genMOSS)
