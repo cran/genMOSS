@@ -1,4 +1,4 @@
-MOSS.Hierarchical <-
+MOSS_Hierarchical <-
 function (startList = NULL, p = 0.2, alpha = 1, c = 0.1, cPrime = 0.0001, q = 0.1, replicates = 5, data) {
   
   tools <- list()

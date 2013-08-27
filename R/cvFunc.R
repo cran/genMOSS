@@ -1,5 +1,5 @@
 cvFunc <-
-function (data, dimens, interactionModels, modelsInMasterList, regPostProb, k, alpha) {
+function (data, dimens, interactionModels, modelsInMasterList, weights, k, alpha) {
   
   newOrder <- sample (x = rep(1:dim(data)[1]), size = dim(data)[1], replace = F)
   data <- data[newOrder,]   
@@ -26,7 +26,7 @@ function (data, dimens, interactionModels, modelsInMasterList, regPostProb, k, a
         v0 <- fitted.values[[s]][findIndex(obsVector, dimens[na.omit(modelsInMasterList[s,])])]
         obsVector[length(obsVector)] <- 1
         v1 <- fitted.values[[s]][findIndex(obsVector, dimens[na.omit(modelsInMasterList[s,])])]
-        diseaseProb[r] <- diseaseProb[r] + regPostProb[s] * v1 / (v0 + v1)
+        diseaseProb[r] <- diseaseProb[r] + weights[s] * v1 / (v0 + v1)
       }
       prediction[r] <- round(diseaseProb[r])
     }

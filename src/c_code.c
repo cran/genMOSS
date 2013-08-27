@@ -1,15 +1,19 @@
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+#include <R.h>
 
 // counts the occurrence of each row in a data frame
 void tabulate (int *data, int nrow, int ncol, int *dims, int *Freq) {
-
+ 
   int i;
   
-  int *cumDims  = malloc (ncol * sizeof(int));
-  
+  // int *cumDims  = malloc (ncol * sizeof(int));
+  int *cumDims = (int *) R_alloc (ncol, sizeof(int));
+
+  if (cumDims == NULL) 
+    error ("Memory allocation error.");
+
   cumDims[ncol - 1] = 1;
 
   for (i = ncol - 2; i >= 0; i--)
@@ -24,7 +28,7 @@ void tabulate (int *data, int nrow, int ncol, int *dims, int *Freq) {
       index = 0;      
     }
   }  
-
+   
 }
 
 // collapses a contingency table over the response variable
@@ -51,7 +55,12 @@ void findLogMargLik (int *data, int *nrow, int *ncol, int *dims, double *alpha, 
   for (i = 0; i < ncol[0]; i++)
     lFreq *= dims[i];  
   
-  int *Freq = calloc (lFreq, sizeof(int));
+  // int *Freq = calloc (lFreq, sizeof(int));
+  int *Freq = (int*) S_alloc (lFreq, sizeof(int));
+
+  if (Freq == NULL) 
+    error ("Memory allocation error");
+
   tabulate (data, nrow[0], ncol[0], dims, Freq); 
      
   double term1, term2;
@@ -64,7 +73,11 @@ void findLogMargLik (int *data, int *nrow, int *ncol, int *dims, double *alpha, 
   term2 = lFreq * lgamma (priorValue);
 
   int lMargFreq = lFreq / dims[ncol[0]-1];
-  int *margFreq = calloc (lMargFreq, sizeof(int));
+  // int *margFreq = calloc (lMargFreq, sizeof(int));
+  int *margFreq = (int*) S_alloc (lMargFreq, sizeof(int));
+
+  if (margFreq == NULL)
+    error ("Memory allocation error.");
 
   collapse (Freq, lFreq, margFreq, dims[ncol[0]-1]);
 
@@ -78,5 +91,5 @@ void findLogMargLik (int *data, int *nrow, int *ncol, int *dims, double *alpha, 
   term4 = lMargFreq * lgamma(priorValue);
 
   logMargLik[0] = term1 - term2 + term4 - term3;
- 
+  
 }

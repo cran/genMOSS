@@ -1,4 +1,4 @@
-MOSS.GWAS.main <-
+MOSS_GWAS_main <-
 function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
 
   # To prevent the warning from the glm function when fitting a log-linear model for a contigency table 
@@ -10,18 +10,19 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   for (j in 1:(dim(data)[2]-1)) {
     v <- as.factor(data[,j])
     if (length(levels(v)) > dimens[j]) {
-      stop(paste("dimens[",j,"] must be increased to at least ", length(levels(v)), sep = ""))
+      stop(paste("The dimens vector does not agree with the data. For example, dimens[",j,"] must be increased to at least ", length(levels(v)), ".", sep = ""))
     }
     formatted_data[,j] <- as.double(v) - 1
   }
 
   v <- as.factor(data[,dim(data)[2]])
   if (length(levels(v)) != 2)
-    stop ("response must be binary")
+    stop ("Response must be binary")
   formatted_data[,dim(data)[2]] <- as.double(v) - 1
 
   formatted_data <- as.data.frame(formatted_data)
-  colnames(formatted_data) <- colnames(data)
+  colnames(formatted_data) <- colnames(data)  
+
   data <- formatted_data
   tData <- t(data)
 
@@ -126,11 +127,10 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   masterList <- unique(masterList)
   modelsInMasterList <- unique(modelsInMasterList)
 
-  postProb <- masterList$logMargLik - max(masterList$logMargLik)
-  postProb <- exp(postProb)
-  postProb <- postProb / sum(postProb)
-  masterList$postProb <- postProb
-    
+  normMargLik <- masterList$logMargLik - max(masterList$logMargLik)
+  normMargLik <- exp(normMargLik)
+  normMargLik <- normMargLik/ sum(normMargLik)
+      
   vars <- unique(sort(modelsInMasterList))
   vars <- vars[-length(vars)]
   nVars <- length(vars)
@@ -139,13 +139,13 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   m <- 1
   for (i in vars) {
     toSum <- ceiling(which(t(modelsInMasterList) == i) / maxVars)
-    postIncProb[m] <- sum(masterList$postProb[toSum])
+    postIncProb[m] <- sum(normMargLik[toSum])
     m <- m + 1
   }
 
   postIncProbList <- data.frame(variable = varNames[vars], postIncProb = postIncProb, stringsAsFactors = F)
 
-  order <- order(masterList$postProb, decreasing = T)
+  order <- order(normMargLik, decreasing = T)
   masterList <- masterList[order,,drop = F]
   modelsInMasterList <- modelsInMasterList[order,,drop = F]
   postIncProbList <- postIncProbList[order(postIncProbList$postIncProb, decreasing = T),,drop = F]
@@ -154,27 +154,25 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   rownames(modelsInMasterList) <- rep(1:dim(modelsInMasterList)[1])
   rownames(postIncProbList) <- rep(1:dim(postIncProbList)[1])
   
-  interactionModels <- c()
-  
-  cat ("searching for top hierarchical log-linear models...\n")
-
-  for (i in 1:dim(modelsInMasterList)[1]) {
-    margData <- data[,na.omit(modelsInMasterList[i,]),drop = F]
-    for (j in 1:dim(margData)[2])
-      margData[,j] <- factor(margData[,j], levels = rep(0:(dimens[modelsInMasterList[i,j]]-1)))
-    margData <- as.data.frame.table(table(margData))
-    colnames(margData)[dim(margData)[2]] <- "freq"
-    interactionModels <- rbind(interactionModels, MOSS.Hierarchical (alpha = alpha, c = 0.1, cPrime = cPrime, q = q, replicates = 5, data = margData))  
-  }
-
   if (is.null(k)) {
-    interactionModels$V2 = NULL
-    colnames(interactionModels) <- c("formula", "logMargLik")
-    x <- list(topRegressions = masterList, postIncProbs = postIncProbList, interactionModels = interactionModels)  
+    x <- list(topRegressions = masterList, postIncProbs = postIncProbList)
   }
   else {
+    interactionModels <- c()
+  
+    cat ("searching for top hierarchical log-linear models...\n")
+
+    for (i in 1:dim(modelsInMasterList)[1]) {
+      margData <- data[,na.omit(modelsInMasterList[i,]),drop = F]
+      for (j in 1:dim(margData)[2])
+        margData[,j] <- factor(margData[,j], levels = rep(0:(dimens[modelsInMasterList[i,j]]-1)))
+      margData <- as.data.frame.table(table(margData))
+      colnames(margData)[dim(margData)[2]] <- "freq"
+      interactionModels <- rbind(interactionModels, MOSS_Hierarchical (alpha = alpha, c = 0.1, cPrime = cPrime, q = q, replicates = 5, data = margData))  
+    }
+
     cat("performing cross validation...\n")
-    avgConfusionMatrix <- cvFunc (data, dimens, interactionModels, modelsInMasterList, masterList$postProb, k, alpha)
+    avgConfusionMatrix <- cvFunc (data, dimens, interactionModels, modelsInMasterList, normMargLik, k, alpha)
     interactionModels$V2 = NULL
     colnames(interactionModels) <- c("formula", "logMargLik")
     x <- list(topRegressions = masterList, postIncProbs = postIncProbList, interactionModels = interactionModels, crossValidation = avgConfusionMatrix)

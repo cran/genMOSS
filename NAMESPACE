@@ -1,2 +1,4 @@
-export(MOSS.GWAS)
+export(MOSS_GWAS)
+export(mWindow)
+export(recode_data)
 useDynLib(genMOSS)
