@@ -1,5 +1,5 @@
 \name{simuCC}
-\Rdversion{1.1}
+\Rdversion{1.2}
 \alias{simuCC}
 \docType{data}
 \title{A simulated case-control sample.}

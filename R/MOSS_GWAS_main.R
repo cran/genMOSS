@@ -1,10 +1,16 @@
 MOSS_GWAS_main <-
-function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
+function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, confVars, k) {
 
   # To prevent the warning from the glm function when fitting a log-linear model for a contigency table 
   # with non-integer values (i.e. the posterior and prior tables) 
   options(warn = -1)
     
+  # if (!is.null(k)) {
+  #  ROCR <- require(ROCR)
+  #  if (!ROCR) 
+  #    stop ("Please install the ROCR package")
+  # }
+
   formatted_data <- array (0, c(dim(data)[1], dim(data)[2]))
   
   for (j in 1:(dim(data)[2]-1)) {
@@ -24,12 +30,17 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   colnames(formatted_data) <- colnames(data)  
 
   data <- formatted_data
-  tData <- t(data)
-
   nPotVars <- dim(data)[2]
   potVars <- rep(1:nPotVars)
-  varNames <- colnames(data)
+  nConfVars <- length(confVars) 
  
+  # Move confounding variables and response to the end of data
+  a <- c(which(colnames(data) %in% confVars), nPotVars)
+  data <- data.frame(data[,-a, drop = F], data[, a, drop = F])
+  dimens <- c(dimens[-a], dimens[a])
+  varNames <- colnames(data)
+  tData <- t(data)
+
   masterList <- c()
   modelsInMasterList <- c() 
   cat ("\nsearching for top regression models...\n")
@@ -38,7 +49,8 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   
     # generate a random starting point
 
-    randomModel <- c(nPotVars, sample(nPotVars-1, sample (maxVars-1, size = 1)))
+    #randomModel <- c(nPotVars, sample(nPotVars-1, sample (maxVars-1, size = 1)))
+    randomModel <- c(seq(nPotVars - nConfVars, nPotVars), sample(nPotVars - nConfVars - 1, sample (maxVars - nConfVars - 1, size = 1)))
     nVars <- length(randomModel)
     models <- matrix (nrow = 1, ncol = maxVars)
     models[1,] <- c(randomModel, rep(NA, maxVars - nVars))
@@ -83,7 +95,7 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
       }
 
       explored[m] <- 1
-      neighbourList <- findNeighbours (models[m,], potVars, maxVars)   
+      neighbourList <- findNeighbours (models[m,], potVars, maxVars, confVars)   
 
       # visit all neighbouring models
 
@@ -99,7 +111,7 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
       
       if (dim(neighbourList)[1] > 0) {
         
-        prettyFormulas <- c(prettyFormulas, currentPrettyFormulas[toKeep])             
+        prettyFormulas <- c(prettyFormulas, currentPrettyFormulas[toKeep])  
         currentLogMargLik <- vector (mode = "numeric", dim(neighbourList)[1]) 
         models <- rbind (models, neighbourList)
 
@@ -132,7 +144,8 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   normMargLik <- normMargLik/ sum(normMargLik)
       
   vars <- unique(sort(modelsInMasterList))
-  vars <- vars[-length(vars)]
+  #vars <- vars[-length(vars)]
+  vars <- vars[1:(length(vars) - nConfVars - 1)]
   nVars <- length(vars)
   postIncProb <- array(0, c(nVars))
 
@@ -162,20 +175,28 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   
     cat ("searching for top hierarchical log-linear models...\n")
 
+    fits <- list()
+
     for (i in 1:dim(modelsInMasterList)[1]) {
       margData <- data[,na.omit(modelsInMasterList[i,]),drop = F]
       for (j in 1:dim(margData)[2])
         margData[,j] <- factor(margData[,j], levels = rep(0:(dimens[modelsInMasterList[i,j]]-1)))
       margData <- as.data.frame.table(table(margData))
       colnames(margData)[dim(margData)[2]] <- "freq"
-      interactionModels <- rbind(interactionModels, MOSS_Hierarchical (alpha = alpha, c = 0.1, cPrime = cPrime, q = q, replicates = 5, data = margData))  
+      interactionModels <- rbind(interactionModels, MOSS_Hierarchical (alpha = alpha, c = 0.1, cPrime = cPrime, q = q, replicates = 5, data = margData)) 
+      fits[[i]] <- glm (formula = interactionModels$V2[i], family = poisson(), data = margData) 
     }
 
     cat("performing cross validation...\n")
-    avgConfusionMatrix <- cvFunc (data, dimens, interactionModels, modelsInMasterList, normMargLik, k, alpha)
+    cvDiag <- cvFunc (data, dimens, interactionModels, modelsInMasterList, normMargLik, k, alpha)
     interactionModels$V2 = NULL
     colnames(interactionModels) <- c("formula", "logMargLik")
-    x <- list(topRegressions = masterList, postIncProbs = postIncProbList, interactionModels = interactionModels, crossValidation = avgConfusionMatrix)
+
+    x <- list(topRegressions = masterList, postIncProbs = postIncProbList, interactionModels = interactionModels, fits = fits, cvMatrix = cvDiag$cvMatrix, cvDiag = data.frame(acc = cvDiag$acc, tpr = cvDiag$tpr, fpr = cvDiag$fpr , auc = cvDiag$auc))
+  
+    for (i in 1:dim(x$interactionModels)[1])
+      x$fits[[i]]$call <- interactionModels[[i]]  
+
   }   
   
   options (warn = 0)

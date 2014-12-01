@@ -11,8 +11,8 @@ function (data, dimens, alpha, windowSize) {
   }
 
   v <- as.factor(data[,dim(data)[2]])
-  if (length(levels(v)) != 2)
-    stop ("Response must be binary")
+    if (length(levels(v)) != 2)
+     stop ("Response must be binary")
   formatted_data[,dim(data)[2]] <- as.double(v) - 1
   
   formatted_data <- as.data.frame(formatted_data)

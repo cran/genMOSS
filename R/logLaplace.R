@@ -15,8 +15,7 @@ function (formula, data, tools) {
   if (d == 0) {
     model <- findModel(formula, tools)
     generators <- findGenerators (model, tools)
-    errorMessage <- paste ("hessian is numerically singular for model: ", prettyHierFormula(generators, tools), sep = "")
-    stop("errorMessage")
+    stop(paste ("Hessian is numerically singular for model: \n", prettyHierFormula(generators, tools), ".\n Hierarchical log-linear model search can not be completed.\n", "Try increasing alpha.", sep = ""))
   }
 
   value <- maxloglik + 0.5 * J * log (2*pi) - 0.5 * log(d) 

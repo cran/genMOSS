@@ -1,12 +1,12 @@
 \name{mWindow}
-\Rdversion{1.1}
+\Rdversion{1.2}
 \title{Analyzing GWAS data in sequence over a moving window}
 \description{A simple alternative to stochastically searching through all combinations of SNPs (as MOSS_GWAS does) is to group SNPs together according to the sequence that they appear in a genetic region (if that information is available). Definining a window size w we first group SNPs 1 to w together and then SNPs 2 to w + 1 together and so on. If we let Y be a response, X be a group of SNPs, and r = Y|X be called the regression of Y on X, the mWindow function computes the marginal likelihood, P(r) = P(Y|X), of the regression corresponding to each group (or window). The aim is to identify those regressions such that the marginal likelihood is the highest. The groups of SNPs (or genetic regions) contained in these regressions are most associated with the response. The prior used in Bayesian computations is the generalized hyper Dirichlet of Massam et. al (2009).}
 \usage{mWindow (data, dimens, alpha = 1, windowSize = 2)}
 \alias{mWindow}
 \arguments{
-  \item{data}{A data frame containing the genotype information for a given set of SNPs. The data frame should be organized such that each row refers to a subject and each column to a SNP. The last column is interpreted as the case / control status of each subject and must be binary. Otherwise, the SNP data need not be binary. The data frame must contain at least 8 columns. Rows containing any missing values (i.e. NAs) are omitted from the analysis.} 
-  \item{dimens}{The number of possible values for each column of data. Each possible value does not need to occur in data. Since the last column of data must be binary, the last entry of dimens must be 2. All other entries of dimens must be greater than or equal to 2.} 
+  \item{data}{A data frame containing the genotype information for a given set of SNPs. The data frame should be organized such that each row refers to a subject and each column to a SNP. The last column must be a binary response for each subject. The data frame must contain at least 8 columns. Rows containing any missing values (i.e. NAs) are omitted from the analysis.} 
+  \item{dimens}{The number of possible values for each column of data. Each possible value does not need to occur in data. All entries of dimens must be greater than or equal to 2.} 
   \item{alpha}{A hyperparameter of the prior representing the total of a fictive contingency table with counts equal to alpha divided by the number of cells. Alpha must be a positive real number.}
   \item{windowSize}{The size of the moving window. Must be an integer from 1 to 5.}
 }

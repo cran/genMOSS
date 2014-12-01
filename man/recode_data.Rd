@@ -1,12 +1,12 @@
 \name{recode_data}
-\Rdversion{1.1}
+\Rdversion{1.2}
 \title{Finding the optimal coding of diallelic SNPs}
 \description{Let Y be a response, X be a SNP, and r = Y|X be called the regression of Y on X. For a diallelic SNP (i.e. a SNP with 3 categories), it may be that the marginal likelihood of the regression, P(r) = P(Y|X), is higher when the SNP is recoded as binary. Using the coding that maximizes this marginal likelihood may increase the power. Trinary variables can be recoded as binary in three different ways (or can be left as is). The function recode_data finds the optimal coding for each diallelic SNP in a given data frame and returns a revised data frame in the same order as the original. SNPs that are not diallelic are inserted into the new data frame unchanged. A vector containing the dimension of each SNP in the revised data frame is also returned. The prior used in Bayesian computations is the generalized hyper Dirichelt of Massam et. al (2009).} 
 \usage{recode_data (data, dimens, alpha = 1)}
 \alias{recode_data}
 \arguments{
-  \item{data}{A data frame containing the genotype information for a given set of SNPs. The data frame should be organized such that each row refers to a subject and each column to a SNP. The last column is interpreted as the case / control status of each subject and must be binary. Otherwise, the SNP data need not be binary. The data frame must contain at least 8 columns. Rows containing any missing values (i.e. NAs) are omitted.} 
-  \item{dimens}{The number of possible values for each column of data. Each possible value does not need to occur in data. Since the last column of data must be binary, the last entry of dimens must be 2. All other entries of dimens must be greater than or equal to 2.} 
+  \item{data}{A data frame containing the genotype information for a given set of SNPs. The data frame should be organized such that each row refers to a subject and each column to a SNP. The last column must be a binary response for each subject. The data frame must contain at least 8 columns. Rows containing any missing values (i.e. NAs) are omitted.} 
+  \item{dimens}{The number of possible values for each column of data. Each possible value does not need to occur in data. All entries of dimens must be greater than or equal to 2.} 
   \item{alpha}{A hyperparameter of the prior representing the total of a fictive contingency table with counts equal to alpha divided by the number of cells. Alpha must be a positive real number.}
 }
 

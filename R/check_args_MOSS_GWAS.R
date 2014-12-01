@@ -1,5 +1,5 @@
 check_args_MOSS_GWAS <-
-function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
+function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, confVars, k) {
 
   if (!is.numeric(alpha)) {
     stop("class(alpha) != 'numeric'")
@@ -75,7 +75,19 @@ function (alpha, c, cPrime, q, replicates, maxVars, data, dimens, k) {
   }
   else if (q < 0 || q > 1) {
     stop ("q must be between 0 and 1")
-  }  
+  }
+  else if(!is.null(confVars) && !is.character(confVars)) {
+    stop ("class(confVars) must be 'NULL' or 'character'")
+  }
+  else if (length(confVars) < 0 || maxVars <= length(confVars) + 1) {
+    stop ("length(confVars) must be between 0 and maxVars - 2")
+  }
+  else if (length(which(!(confVars %in% colnames(data)))) != 0) {
+    stop(paste("Some confounding variables not found in colnames(data)"))
+  }
+  else if (colnames(data)[dim(data)[2]] %in% confVars) {
+    stop(paste("The response cannot be in confVars")) 
+  }
   for (i in 1:length(dimens)) {
     if (dimens[i] - floor(dimens[i]) != 0 || dimens[i] < 2) {
       stop("All entries of dimens must be integers greater than or equal to 2")

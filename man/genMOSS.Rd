@@ -1,19 +1,19 @@
 \name{genMOSS}
-\Rdversion{1.1}
+\Rdversion{1.2}
 \title{Functions for the Bayesian analysis of GWAS data}
 \description{The genMOSS package implements the Mode Oriented Stochastic Search (MOSS) of Dobra and Massam (2010) as well as a simple moving window approach (see Sun et. al (2006) and Wu et. al (2010)) to identify combinations of SNPs that are associated with a response.} 
 \details{
 \tabular{ll}{
 Package: \tab genMOSS\cr
 Type: \tab Package\cr
-Version: \tab 1.1\cr
-Date: \tab 2013-08-27\cr
+Version: \tab 1.2\cr
+Date: \tab 2014-12-01\cr
 License: \tab GPL-2\cr
 LazyLoad: \tab yes\cr
 }
 The function MOSS_GWAS implements the MOSS algorithm while the mWindow implements the moving window approach.}
 \author{Authors: Matthew Friedlander, Adrian Dobra, Helene Massam, and Laurent Briollais,
-Maintainer: Matthew Friedlander <friedlander@lunenfeld.ca>
+Maintainer: Matthew Friedlander <friedlander.matthew@gmail.com>
 }
 \references{[1] Massam, H., Liu, J. and Dobra, A. (2009). A conjugate prior for discrete hierarchical log-linear models. Annals of Statistics, 37, 3431-3467.
 
@@ -31,7 +31,7 @@ data <- simuCC[,c(1002,2971,rep(5978:6001))]
 # The SNPs in columns 1002 and 2971 of simuCC called rs4491689 and rs6869003 cause the disease.
 set.seed(7)
 MOSS_GWAS (alpha = 1, c = 0.1, cPrime = 0.0001, q = 0.1, replicates = 1, 
-           maxVars = 3, data, dimens = c(rep(3,25),2), k = NULL)
+           maxVars = 3, data, dimens = c(rep(3,25),2), confVars = NULL, k = NULL)
 s <- mWindow (data, dimens = c(rep(3,25),2), alpha = 1, windowSize = 2)
 head (s, n = 5)
 }
